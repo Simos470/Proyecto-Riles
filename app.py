@@ -10,6 +10,17 @@ st.markdown("""
 """)
 st.markdown("---")
 
+# --- OCULTAR ELEMENTOS DE STREAMLIT ---
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stAppHeader {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
 # 1. MATRIZ DE CUERPOS RECEPTORES (Lenguaje basado en DS 90, DS 609 y DS 46)
 # Definimos la relación técnica entre la naturaleza del vertido y su marco legal
 MATRIZ_NORMATIVA = {
