@@ -4,7 +4,7 @@ import pandas as pd
 # Configuración con identidad institucional
 st.set_page_config(page_title="Sistema de Validación RILES", page_icon="⚖️", layout="wide")
 
-st.title("⚖️ Sistema de Validación de Cumplimiento: Normas de Emisión")
+st.title("Sistema de Validación de Cumplimiento: Normas de Emisión")
 st.markdown("""
     *Herramienta técnica para la verificación de parámetros físico-químicos según la normativa ambiental vigente de la República de Chile.*
 """)
