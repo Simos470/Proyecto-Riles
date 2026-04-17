@@ -10,38 +10,25 @@ st.markdown("""
 """)
 st.markdown("---")
 
-## --- LIMPIEZA QUIRÚRGICA TOTAL ---
+# --- LIMPIEZA QUIRÚRGICA (Mantiene Sidebar funcional) ---
 hide_st_style = """
             <style>
-            /* 1. Elimina el encabezado y la línea de color superior */
-            [data-testid="stHeader"], .stAppHeader, #stDecoration {
-                display: none !important;
-                height: 0px !important;
-            }
-
-            /* 2. Elimina TODO el contenedor de herramientas de la esquina inferior */
-            [data-testid="stToolbar"], .stToolbar {
-                display: none !important;
-                visibility: hidden !important;
-            }
-
-            /* 3. Específicamente el botón de 'Deploy' (la corona) y el status (el círculo) */
-            [data-testid="stDeployButton"], .stAppDeployButton {
-                display: none !important;
-            }
-            [data-testid="stStatusWidget"], .stStatusWidget {
-                display: none !important;
-            }
-
-            /* 4. Elimina el menú de hamburguesa y el footer */
-            #MainMenu {display: none !important;}
+            /* 1. Borramos solo la corona (Deploy) y el círculo de estado */
+            [data-testid="stDeployButton"] {display: none !important;}
+            [data-testid="stStatusWidget"] {display: none !important;}
+            
+            /* 2. Borramos el footer 'Made with Streamlit' */
             footer {display: none !important;}
 
-            /* 5. Ajuste de márgenes para que la App ocupe toda la pantalla */
-            .block-container {
-                padding-top: 0rem !important;
-                padding-bottom: 0rem !important;
+            /* 3. En lugar de borrar el Header, lo hacemos transparente. 
+               Esto permite que el botón del Sidebar siga existiendo y sea clickeable. */
+            [data-testid="stHeader"] {
+                background-color: rgba(0,0,0,0) !important;
+                color: white !important;
             }
+
+            /* 4. Si quieres que el menú lateral se vea más arriba */
+            [data-testid="stSidebar"] {padding-top: 0rem !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
