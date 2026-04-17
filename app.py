@@ -10,13 +10,22 @@ st.markdown("""
 """)
 st.markdown("---")
 
-# --- OCULTAR ELEMENTOS DE STREAMLIT ---
+# --- LIMPIEZA TOTAL DE INTERFAZ (Desktop & Mobile) ---
 hide_st_style = """
             <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stAppHeader {visibility: hidden;}
+            /* Ocultar header, footer y menú de hamburguesa */
+            #MainMenu {visibility: hidden; display: none !important;}
+            footer {visibility: hidden; display: none !important;}
+            header {visibility: hidden; display: none !important;}
+            .stAppHeader {visibility: hidden; display: none !important;}
+            
+            /* Ocultar los íconos flotantes de la esquina inferior (Toolbar y Deploy) */
+            .stDeployButton {display: none !important;}
+            .stStatusWidget {display: none !important;}
+            .stToolbar {display: none !important;}
+            
+            /* Eliminar el espacio en blanco superior innecesario */
+            .block-container {padding-top: 1rem !important; padding-bottom: 0rem !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
