@@ -10,22 +10,38 @@ st.markdown("""
 """)
 st.markdown("---")
 
-# --- LIMPIEZA TOTAL DE INTERFAZ (Desktop & Mobile) ---
+## --- LIMPIEZA QUIRÚRGICA TOTAL ---
 hide_st_style = """
             <style>
-            /* Ocultar header, footer y menú de hamburguesa */
-            #MainMenu {visibility: hidden; display: none !important;}
-            footer {visibility: hidden; display: none !important;}
-            header {visibility: hidden; display: none !important;}
-            .stAppHeader {visibility: hidden; display: none !important;}
-            
-            /* Ocultar los íconos flotantes de la esquina inferior (Toolbar y Deploy) */
-            .stDeployButton {display: none !important;}
-            .stStatusWidget {display: none !important;}
-            .stToolbar {display: none !important;}
-            
-            /* Eliminar el espacio en blanco superior innecesario */
-            .block-container {padding-top: 1rem !important; padding-bottom: 0rem !important;}
+            /* 1. Elimina el encabezado y la línea de color superior */
+            [data-testid="stHeader"], .stAppHeader, #stDecoration {
+                display: none !important;
+                height: 0px !important;
+            }
+
+            /* 2. Elimina TODO el contenedor de herramientas de la esquina inferior */
+            [data-testid="stToolbar"], .stToolbar {
+                display: none !important;
+                visibility: hidden !important;
+            }
+
+            /* 3. Específicamente el botón de 'Deploy' (la corona) y el status (el círculo) */
+            [data-testid="stDeployButton"], .stAppDeployButton {
+                display: none !important;
+            }
+            [data-testid="stStatusWidget"], .stStatusWidget {
+                display: none !important;
+            }
+
+            /* 4. Elimina el menú de hamburguesa y el footer */
+            #MainMenu {display: none !important;}
+            footer {display: none !important;}
+
+            /* 5. Ajuste de márgenes para que la App ocupe toda la pantalla */
+            .block-container {
+                padding-top: 0rem !important;
+                padding-bottom: 0rem !important;
+            }
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
