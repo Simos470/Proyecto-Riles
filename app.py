@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
+import json
 
 # 1. CONFIGURACIÓN E IDENTIDAD
-st.set_page_config(page_title="Validador RILES", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="Validador RILES", page_icon="⚖️", layout="wide")
 
 # --- LIMPIEZA QUIRÚRGICA ---
 hide_st_style = """
@@ -11,96 +12,132 @@ hide_st_style = """
             [data-testid="stStatusWidget"] {display: none !important;}
             footer {display: none !important;}
             [data-testid="stHeader"] {background-color: rgba(0,0,0,0) !important;}
-            /* Ajuste para que en móvil no se vea apretado */
             .block-container {padding-top: 2rem !important;}
             </style>
             """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
-st.title("⚖️ Validación de Cumplimiento RILES")
+st.title("⚖️ Motor de Validación Normativa RILES")
 st.markdown("---")
 
-# 2. DEFINICIÓN DE MATRIZ (Mantenemos tu lógica potente)
-MATRIZ_NORMATIVA = {
-    "Sistemas de Alcantarillado (DS 609/98)": {
-        "decreto": "D.S. N° 609/98",
-        "tabla": "Tabla N° 1",
-        "limites": {"pH": [5.5, 9.0], "Temperatura": 35.0, "DBO5": 300.0, "DQO": 600.0, "AyG": 150.0, "SST": 300.0}
-    },
-    "Cuerpos de Agua Continentales (DS 90/00)": {
-        "decreto": "D.S. N° 90/00",
-        "tabla": "Tabla N° 1",
-        "limites": {"pH": [6.0, 8.5], "Temperatura": 30.0, "DBO5": 35.0, "DQO": 120.0, "AyG": 20.0, "SST": 80.0}
-    },
-    "Aguas Marinas (DS 90/00)": {
-        "decreto": "D.S. N° 90/00",
-        "tabla": "Tabla N° 3",
-        "limites": {"pH": [6.0, 9.0], "Temperatura": 35.0, "DBO5": 100.0, "DQO": 250.0, "AyG": 50.0, "SST": 100.0}
-    }
-}
+# 2. CARGA DINÁMICA DE LA BASE DE DATOS
+@st.cache_data
+def cargar_normativa():
+    # Asume que el archivo normativa.json está en el mismo directorio
+    try:
+        with open('normativa.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        st.error("🚨 Archivo 'normativa.json' no encontrado. Asegúrate de cargarlo en el directorio.")
+        return {}
 
-# 3. PASO 1: SELECCIÓN DEL CUERPO RECEPTOR (Ahora en el centro)
-st.subheader("📍 1. Destino del Vertido")
-cuerpo_receptor = st.selectbox(
-    "Seleccione la naturaleza del Cuerpo Receptor:",
-    list(MATRIZ_NORMATIVA.keys()),
-    help="Define el marco legal y los límites máximos permitidos."
-)
+matriz_normativa = cargar_normativa()
 
-datos_norma = MATRIZ_NORMATIVA[cuerpo_receptor]
-
-# Breve info del decreto seleccionado
-st.caption(f"Aplicando: **{datos_norma['decreto']}** ({datos_norma['tabla']})")
-
-with st.expander("Ver detalle del marco regulatorio"):
-    st.write(f"Esta sección valida los parámetros según los límites establecidos en el {datos_norma['decreto']} para {cuerpo_receptor.lower()}.")
-
-st.markdown("---")
-
-# 4. PASO 2: CARACTERIZACIÓN (Entrada de datos)
-st.subheader("🧪 2. Caracterización del Efluente")
-col1, col2 = st.columns(2)
-
-with col1:
-    in_ph = st.number_input("pH", value=7.0, step=0.1)
-    in_temp = st.number_input("Temp. (°C)", value=20.0)
-    in_dbo5 = st.number_input("DBO5 (mg/L)", value=0.0)
-
-with col2:
-    in_dqo = st.number_input("DQO (mg/L)", value=0.0)
-    in_ayg = st.number_input("AyG (mg/L)", value=0.0)
-    in_sst = st.number_input("SST (mg/L)", value=0.0)
-
-# 5. PASO 3: RESULTADOS
-st.markdown("---")
-st.subheader("📊 3. Informe de Validación")
-
-entradas = {
-    "pH": in_ph, "Temperatura": in_temp, "DBO5": in_dbo5, 
-    "DQO": in_dqo, "AyG": in_ayg, "SST": in_sst
-}
-
-limites = datos_norma["limites"]
-filas = []
-
-for param, valor in entradas.items():
-    limite = limites[param]
-    cumple = True
-    if param == "pH":
-        if valor < limite[0] or valor > limite[1]: cumple = False
-    elif valor > limite: cumple = False
+if matriz_normativa:
+    # 3. PASO 1: SELECCIÓN DEL MARCO REGULATORIO
+    st.subheader("📍 1. Selección de Normativa y Escenario")
     
-    filas.append({
-        "Parámetro": param,
-        "Valor": valor,
-        "Límite": str(limite),
-        "Estado": "✔️ OK" if cumple else "❌ EXCESO"
-    })
+    # Crear un diccionario para mapear el "nombre" visible con la "clave" del JSON
+    opciones_nombres = {datos["nombre"]: clave for clave, datos in matriz_normativa.items()}
+    
+    nombre_seleccionado = st.selectbox(
+        "Seleccione el escenario normativo a evaluar:",
+        list(opciones_nombres.keys()),
+        help="Define la tabla de límites máximos que se aplicará al efluente o cálculo de carga."
+    )
+    
+    # Extraer los datos específicos de la selección
+    clave_seleccionada = opciones_nombres[nombre_seleccionado]
+    datos_norma = matriz_normativa[clave_seleccionada]
+    parametros_norma = datos_norma["parametros"]
 
-st.table(pd.DataFrame(filas))
+    with st.expander("Ver detalle del marco regulatorio seleccionado", expanded=True):
+        st.info(f"**Descripción:** {datos_norma['descripcion']}")
 
-# Dictamen final
-if any("❌" in r["Estado"] for r in filas):
-    st.error("🚨 EL VERTIDO NO CUMPLE LA NORMA")
-else:
-    st.success("✅ EL VERTIDO CUMPLE LA NORMA")
+    st.markdown("---")
+
+    # 4. PASO 2: CARACTERIZACIÓN DINÁMICA (Generación automática de inputs)
+    st.subheader("🧪 2. Ingreso de Datos de Laboratorio / Terreno")
+    st.caption("Ingrese los valores medidos. La unidad requerida se indica en cada parámetro.")
+    
+    entradas_usuario = {}
+    
+    # Agrupar inputs en 3 o 4 columnas para optimizar el espacio en pantalla
+    columnas_input = st.columns(4)
+    
+    for i, (param, specs) in enumerate(parametros_norma.items()):
+        col = columnas_input[i % 4]
+        with col:
+            # Si el parámetro tiene una nota (ej. Aluminio o Boro), la mostramos en el 'help'
+            ayuda = specs.get("nota", "")
+            
+            # El input numérico: la etiqueta incluye la unidad automáticamente
+            entradas_usuario[param] = st.number_input(
+                f"{param} ({specs['unidad']})", 
+                value=0.0, 
+                step=0.1,
+                help=ayuda
+            )
+
+    # 5. PASO 3: MOTOR DE EVALUACIÓN Y RESULTADOS
+    st.markdown("---")
+    st.subheader("📊 3. Informe de Validación y Análisis de Sensibilidad")
+
+    filas_resultados = []
+    estado_general = "CUMPLE"
+
+    for param, valor in entradas_usuario.items():
+        specs = parametros_norma[param]
+        estado = "✔️ OK"
+        limite_str = ""
+        
+        # Caso especial: pH u otros con rangos (min y max)
+        if "min" in specs and "max" in specs:
+            limite_str = f"[{specs['min']} - {specs['max']}]"
+            if valor < specs["min"] or valor > specs["max"]:
+                estado = "❌ EXCESO"
+                estado_general = "NO CUMPLE"
+            # Alerta de sensibilidad para pH (cerca de los bordes)
+            elif (valor - specs["min"] <= 0.5) or (specs["max"] - valor <= 0.5):
+                if valor != 0.0: # Evitar alerta falsa si está en 0 por defecto
+                    estado = "⚠️ RIESGO MARGEN"
+        
+        # Caso estándar: Solo límite máximo
+        elif "max" in specs:
+            limite_str = str(specs["max"])
+            if valor > specs["max"]:
+                estado = "❌ EXCESO"
+                estado_general = "NO CUMPLE"
+            # Lógica de Semáforo: Alerta si supera el 90% del límite permitido
+            elif valor >= specs["max"] * 0.9 and valor != 0.0:
+                estado = "⚠️ ALERTA (>90%)"
+        
+        filas_resultados.append({
+            "Parámetro": param,
+            "Valor Medido": valor,
+            "Unidad": specs["unidad"],
+            "Límite Normativo": limite_str,
+            "Diagnóstico": estado
+        })
+
+    # Mostrar tabla usando pandas
+    df_resultados = pd.DataFrame(filas_resultados)
+    
+    # Aplicar color a la tabla (opcional, mejora la UX)
+    def color_filas(val):
+        if "❌" in str(val): return 'background-color: #ffcccc; color: black;'
+        if "⚠️" in str(val): return 'background-color: #fff3cd; color: black;'
+        return ''
+    
+    st.dataframe(df_resultados.style.map(color_filas), use_container_width=True)
+
+    # 6. DICTAMEN FINAL JURÍDICO/TÉCNICO
+    st.markdown("### 📝 Dictamen de Cumplimiento")
+    if estado_general == "NO CUMPLE":
+        st.error("🚨 **ALERTA CRÍTICA:** Los valores ingresados exceden los límites máximos permitidos por la normativa seleccionada. Se requiere ajuste de proceso o retención de efluente.")
+    else:
+        # Revisar si hay advertencias para no dar un simple "OK" si están al borde
+        if any("⚠️" in r["Diagnóstico"] for r in filas_resultados):
+            st.warning("✅ **CUMPLE CON OBSERVACIONES:** El vertido cumple la norma, pero algunos parámetros están en un umbral crítico (>90% del límite). Se recomienda análisis de sensibilidad.")
+        else:
+            st.success("✅ **CUMPLE LA NORMATIVA:** Todos los parámetros se encuentran en rangos de operación seguros según el marco regulatorio vigente.")
